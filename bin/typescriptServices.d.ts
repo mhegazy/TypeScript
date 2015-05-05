@@ -1094,7 +1094,9 @@ declare module ts {
         locale?: string;
         mapRoot?: string;
         module?: ModuleKind;
+        newLine?: NewLineKind;
         noEmit?: boolean;
+        noEmitHelpers?: boolean;
         noEmitOnError?: boolean;
         noErrorTruncation?: boolean;
         noImplicitAny?: boolean;
@@ -1122,6 +1124,10 @@ declare module ts {
         AMD = 2,
         UMD = 3,
         System = 4,
+    }
+    const enum NewLineKind {
+        CarriageReturnLineFeed = 0,
+        LineFeed = 1,
     }
     interface LineAndCharacter {
         line: number;
@@ -1185,6 +1191,32 @@ declare module ts {
     var sys: System;
 }
 declare module ts {
+    interface ErrorCallback {
+        (message: DiagnosticMessage, length: number): void;
+    }
+    interface Scanner {
+        getStartPos(): number;
+        getToken(): SyntaxKind;
+        getTextPos(): number;
+        getTokenPos(): number;
+        getTokenText(): string;
+        getTokenValue(): string;
+        hasExtendedUnicodeEscape(): boolean;
+        hasPrecedingLineBreak(): boolean;
+        isIdentifier(): boolean;
+        isReservedWord(): boolean;
+        isUnterminated(): boolean;
+        reScanGreaterToken(): SyntaxKind;
+        reScanSlashToken(): SyntaxKind;
+        reScanTemplateToken(): SyntaxKind;
+        scan(): SyntaxKind;
+        setText(text: string, start?: number, length?: number): void;
+        setOnError(onError: ErrorCallback): void;
+        setScriptTarget(scriptTarget: ScriptTarget): void;
+        setTextPos(textPos: number): void;
+        lookAhead<T>(callback: () => T): T;
+        tryScan<T>(callback: () => T): T;
+    }
     function tokenToString(t: SyntaxKind): string;
     function getPositionOfLineAndCharacter(sourceFile: SourceFile, line: number, character: number): number;
     function getLineAndCharacterOfPosition(sourceFile: SourceFile, position: number): LineAndCharacter;
@@ -1194,6 +1226,8 @@ declare module ts {
     function getTrailingCommentRanges(text: string, pos: number): CommentRange[];
     function isIdentifierStart(ch: number, languageVersion: ScriptTarget): boolean;
     function isIdentifierPart(ch: number, languageVersion: ScriptTarget): boolean;
+    /** Creates a scanner over a (possibly unspecified) range of a piece of text. */
+    function createScanner(languageVersion: ScriptTarget, skipTrivia: boolean, text?: string, onError?: ErrorCallback, start?: number, length?: number): Scanner;
 }
 declare module ts {
     function getDefaultLibFileName(options: CompilerOptions): string;
@@ -1361,8 +1395,16 @@ declare module ts {
         getSyntacticDiagnostics(fileName: string): Diagnostic[];
         getSemanticDiagnostics(fileName: string): Diagnostic[];
         getCompilerOptionsDiagnostics(): Diagnostic[];
+        /**
+         * @deprecated Use getEncodedSyntacticClassifications instead.
+         */
         getSyntacticClassifications(fileName: string, span: TextSpan): ClassifiedSpan[];
+        /**
+         * @deprecated Use getEncodedSemanticClassifications instead.
+         */
         getSemanticClassifications(fileName: string, span: TextSpan): ClassifiedSpan[];
+        getEncodedSyntacticClassifications(fileName: string, span: TextSpan): Classifications;
+        getEncodedSemanticClassifications(fileName: string, span: TextSpan): Classifications;
         getCompletionsAtPosition(fileName: string, position: number): CompletionInfo;
         getCompletionEntryDetails(fileName: string, position: number, entryName: string): CompletionEntryDetails;
         getQuickInfoAtPosition(fileName: string, position: number): QuickInfo;
@@ -1372,6 +1414,7 @@ declare module ts {
         getRenameInfo(fileName: string, position: number): RenameInfo;
         findRenameLocations(fileName: string, position: number, findInStrings: boolean, findInComments: boolean): RenameLocation[];
         getDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[];
+        getTypeDefinitionAtPosition(fileName: string, position: number): DefinitionInfo[];
         getReferencesAtPosition(fileName: string, position: number): ReferenceEntry[];
         findReferences(fileName: string, position: number): ReferencedSymbol[];
         getDocumentHighlights(fileName: string, position: number, filesToSearch: string[]): DocumentHighlights[];
@@ -1390,6 +1433,10 @@ declare module ts {
         getProgram(): Program;
         getSourceFile(fileName: string): SourceFile;
         dispose(): void;
+    }
+    interface Classifications {
+        spans: number[];
+        endOfLineState: EndOfLineState;
     }
     interface ClassifiedSpan {
         textSpan: TextSpan;
@@ -1602,7 +1649,7 @@ declare module ts {
         text: string;
     }
     const enum EndOfLineState {
-        Start = 0,
+        None = 0,
         InMultiLineCommentTrivia = 1,
         InSingleQuoteStringLiteral = 2,
         InDoubleQuoteStringLiteral = 3,
@@ -1648,8 +1695,10 @@ declare module ts {
          *                                  classifications which may be incorrectly categorized will be given
          *                                  back as Identifiers in order to allow the syntactic classifier to
          *                                  subsume the classification.
+         * @deprecated Use getLexicalClassifications instead.
          */
         getClassificationsForLine(text: string, lexState: EndOfLineState, syntacticClassifierAbsent: boolean): ClassificationResult;
+        getEncodedLexicalClassifications(text: string, endOfLineState: EndOfLineState, syntacticClassifierAbsent: boolean): Classifications;
     }
     /**
       * The document registry represents a store of SourceFile objects that can be shared between
@@ -1760,7 +1809,27 @@ declare module ts {
         static interfaceName: string;
         static moduleName: string;
         static typeParameterName: string;
-        static typeAlias: string;
+        static typeAliasName: string;
+        static parameterName: string;
+    }
+    const enum ClassificationType {
+        comment = 1,
+        identifier = 2,
+        keyword = 3,
+        numericLiteral = 4,
+        operator = 5,
+        stringLiteral = 6,
+        regularExpressionLiteral = 7,
+        whiteSpace = 8,
+        text = 9,
+        punctuation = 10,
+        className = 11,
+        enumName = 12,
+        interfaceName = 13,
+        moduleName = 14,
+        typeParameterName = 15,
+        typeAliasName = 16,
+        parameterName = 17,
     }
     interface DisplayPartsSymbolWriter extends SymbolWriter {
         displayParts(): SymbolDisplayPart[];

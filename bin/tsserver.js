@@ -444,7 +444,7 @@ var ts;
         for (var _i = 0; _i < parts.length; _i++) {
             var part = parts[_i];
             if (part !== ".") {
-                if (part === ".." && normalized.length > 0 && normalized[normalized.length - 1] !== "..") {
+                if (part === ".." && normalized.length > 0 && lastOrUndefined(normalized) !== "..") {
                     normalized.pop();
                 }
                 else {
@@ -536,7 +536,7 @@ var ts;
     function getRelativePathToDirectoryOrUrl(directoryPathOrUrl, relativeOrAbsolutePath, currentDirectory, getCanonicalFileName, isAbsolutePathAnUrl) {
         var pathComponents = getNormalizedPathOrUrlComponents(relativeOrAbsolutePath, currentDirectory);
         var directoryComponents = getNormalizedPathOrUrlComponents(directoryPathOrUrl, currentDirectory);
-        if (directoryComponents.length > 1 && directoryComponents[directoryComponents.length - 1] === "") {
+        if (directoryComponents.length > 1 && lastOrUndefined(directoryComponents) === "") {
             directoryComponents.length--;
         }
         for (var joinStartIndex = 0; joinStartIndex < pathComponents.length && joinStartIndex < directoryComponents.length; joinStartIndex++) {
@@ -1416,6 +1416,9 @@ var ts;
         Preserve_new_lines_when_emitting_code: { code: 6057, category: ts.DiagnosticCategory.Message, key: "Preserve new-lines when emitting code." },
         Specifies_the_root_directory_of_input_files_Use_to_control_the_output_directory_structure_with_outDir: { code: 6058, category: ts.DiagnosticCategory.Message, key: "Specifies the root directory of input files. Use to control the output directory structure with --outDir." },
         File_0_is_not_under_rootDir_1_rootDir_is_expected_to_contain_all_source_files: { code: 6059, category: ts.DiagnosticCategory.Error, key: "File '{0}' is not under 'rootDir' '{1}'. 'rootDir' is expected to contain all source files." },
+        Specifies_the_end_of_line_sequence_to_be_used_when_emitting_files_Colon_CRLF_dos_or_LF_unix: { code: 6060, category: ts.DiagnosticCategory.Message, key: "Specifies the end of line sequence to be used when emitting files: 'CRLF' (dos) or 'LF' (unix)." },
+        NEWLINE: { code: 6061, category: ts.DiagnosticCategory.Message, key: "NEWLINE" },
+        Argument_for_newLine_option_must_be_CRLF_or_LF: { code: 6062, category: ts.DiagnosticCategory.Error, key: "Argument for '--newLine' option must be 'CRLF' or 'LF'." },
         Variable_0_implicitly_has_an_1_type: { code: 7005, category: ts.DiagnosticCategory.Error, key: "Variable '{0}' implicitly has an '{1}' type." },
         Parameter_0_implicitly_has_an_1_type: { code: 7006, category: ts.DiagnosticCategory.Error, key: "Parameter '{0}' implicitly has an '{1}' type." },
         Member_0_implicitly_has_an_1_type: { code: 7008, category: ts.DiagnosticCategory.Error, key: "Member '{0}' implicitly has an '{1}' type." },
@@ -1844,7 +1847,7 @@ var ts;
                     }
                     collecting = true;
                     if (result && result.length) {
-                        result[result.length - 1].hasTrailingNewLine = true;
+                        ts.lastOrUndefined(result).hasTrailingNewLine = true;
                     }
                     continue;
                 case 9:
@@ -1890,7 +1893,7 @@ var ts;
                 default:
                     if (ch > 127 && (isWhiteSpace(ch) || isLineBreak(ch))) {
                         if (result && result.length && isLineBreak(ch)) {
-                            result[result.length - 1].hasTrailingNewLine = true;
+                            ts.lastOrUndefined(result).hasTrailingNewLine = true;
                         }
                         pos++;
                         continue;
@@ -2771,9 +2774,23 @@ var ts;
             error: ts.Diagnostics.Argument_for_module_option_must_be_commonjs_amd_system_or_umd
         },
         {
+            name: "newLine",
+            type: {
+                "crlf": 0,
+                "lf": 1
+            },
+            description: ts.Diagnostics.Specifies_the_end_of_line_sequence_to_be_used_when_emitting_files_Colon_CRLF_dos_or_LF_unix,
+            paramType: ts.Diagnostics.NEWLINE,
+            error: ts.Diagnostics.Argument_for_newLine_option_must_be_CRLF_or_LF
+        },
+        {
             name: "noEmit",
             type: "boolean",
             description: ts.Diagnostics.Do_not_emit_outputs
+        },
+        {
+            name: "noEmitHelpers",
+            type: "boolean"
         },
         {
             name: "noEmitOnError",
@@ -3765,7 +3782,7 @@ var ts;
     }
     ts.hasQuestionToken = hasQuestionToken;
     function hasRestParameters(s) {
-        return s.parameters.length > 0 && s.parameters[s.parameters.length - 1].dotDotDotToken !== undefined;
+        return s.parameters.length > 0 && ts.lastOrUndefined(s.parameters).dotDotDotToken !== undefined;
     }
     ts.hasRestParameters = hasRestParameters;
     function isLiteralKind(kind) {
@@ -4193,7 +4210,7 @@ var ts;
                 var lineStartsOfS = ts.computeLineStarts(s);
                 if (lineStartsOfS.length > 1) {
                     lineCount = lineCount + lineStartsOfS.length - 1;
-                    linePos = output.length - s.length + lineStartsOfS[lineStartsOfS.length - 1];
+                    linePos = output.length - s.length + ts.lastOrUndefined(lineStartsOfS);
                 }
             }
         }
@@ -4262,8 +4279,8 @@ var ts;
     ts.getFirstConstructorWithBody = getFirstConstructorWithBody;
     function shouldEmitToOwnFile(sourceFile, compilerOptions) {
         if (!isDeclarationFile(sourceFile)) {
-            if ((isExternalModule(sourceFile) || !compilerOptions.out) && !ts.fileExtensionIs(sourceFile.fileName, ".js")) {
-                return true;
+            if ((isExternalModule(sourceFile) || !compilerOptions.out)) {
+                return compilerOptions.separateCompilation || !ts.fileExtensionIs(sourceFile.fileName, ".js");
             }
             return false;
         }
@@ -5838,7 +5855,7 @@ var ts;
             templateSpans.pos = getNodePos();
             do {
                 templateSpans.push(parseTemplateSpan());
-            } while (templateSpans[templateSpans.length - 1].literal.kind === 12);
+            } while (ts.lastOrUndefined(templateSpans).literal.kind === 12);
             templateSpans.end = getNodeEnd();
             template.templateSpans = templateSpans;
             return finishNode(template);
@@ -11495,7 +11512,7 @@ var ts;
         }
         function getRestTypeOfSignature(signature) {
             if (signature.hasRestParameter) {
-                var type = getTypeOfSymbol(signature.parameters[signature.parameters.length - 1]);
+                var type = getTypeOfSymbol(ts.lastOrUndefined(signature.parameters));
                 if (type.flags & 4096 && type.target === globalArrayType) {
                     return type.typeArguments[0];
                 }
@@ -13589,7 +13606,7 @@ var ts;
                         }
                         if (indexOfParameter === (func.parameters.length - 1) &&
                             funcHasRestParameters && contextualSignature.hasRestParameter && func.parameters.length >= contextualSignature.parameters.length) {
-                            return getTypeOfSymbol(contextualSignature.parameters[contextualSignature.parameters.length - 1]);
+                            return getTypeOfSymbol(ts.lastOrUndefined(contextualSignature.parameters));
                         }
                     }
                 }
@@ -14649,9 +14666,9 @@ var ts;
                 links.type = instantiateType(getTypeAtPosition(context, i), mapper);
             }
             if (signature.hasRestParameter && context.hasRestParameter && signature.parameters.length >= context.parameters.length) {
-                var parameter = signature.parameters[signature.parameters.length - 1];
+                var parameter = ts.lastOrUndefined(signature.parameters);
                 var links = getSymbolLinks(parameter);
-                links.type = instantiateType(getTypeOfSymbol(context.parameters[context.parameters.length - 1]), mapper);
+                links.type = instantiateType(getTypeOfSymbol(ts.lastOrUndefined(context.parameters)), mapper);
             }
         }
         function getReturnTypeFromBody(func, contextualMapper) {
@@ -17283,7 +17300,7 @@ var ts;
                 checkExpressionCached(node.expression);
             }
             checkExternalModuleExports(container);
-            if (node.isExportEquals) {
+            if (node.isExportEquals && !ts.isInAmbientContext(node)) {
                 if (languageVersion >= 2) {
                     grammarErrorOnNode(node, ts.Diagnostics.Export_assignment_cannot_be_used_when_targeting_ECMAScript_6_or_higher_Consider_using_export_default_instead);
                 }
@@ -19030,7 +19047,7 @@ var ts;
         function checkGrammarBindingElement(node) {
             if (node.dotDotDotToken) {
                 var elements = node.parent.elements;
-                if (node !== elements[elements.length - 1]) {
+                if (node !== ts.lastOrUndefined(elements)) {
                     return grammarErrorOnNode(node, ts.Diagnostics.A_rest_element_must_be_last_in_an_array_destructuring_pattern);
                 }
                 if (node.name.kind === 152 || node.name.kind === 151) {
@@ -20599,10 +20616,10 @@ var ts;
     }
     ts.isExternalModuleOrDeclarationFile = isExternalModuleOrDeclarationFile;
     function emitFiles(resolver, host, targetSourceFile) {
-        var extendsHelper = "\nvar __extends = this.__extends || function (d, b) {\n    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];\n    function __() { this.constructor = d; }\n    __.prototype = b.prototype;\n    d.prototype = new __();\n};";
-        var decorateHelper = "\nif (typeof __decorate !== \"function\") __decorate = function (decorators, target, key, desc) {\n    if (typeof Reflect === \"object\" && typeof Reflect.decorate === \"function\") return Reflect.decorate(decorators, target, key, desc);\n    switch (arguments.length) {\n        case 2: return decorators.reduceRight(function(o, d) { return (d && d(o)) || o; }, target);\n        case 3: return decorators.reduceRight(function(o, d) { return (d && d(target, key)), void 0; }, void 0);\n        case 4: return decorators.reduceRight(function(o, d) { return (d && d(target, key, o)) || o; }, desc);\n    }\n};";
-        var metadataHelper = "\nif (typeof __metadata !== \"function\") __metadata = function (k, v) {\n    if (typeof Reflect === \"object\" && typeof Reflect.metadata === \"function\") return Reflect.metadata(k, v);\n};";
-        var paramHelper = "\nif (typeof __param !== \"function\") __param = function (paramIndex, decorator) {\n    return function (target, key) { decorator(target, key, paramIndex); }\n};";
+        var extendsHelper = "\nvar __extends = (this && this.__extends) || function (d, b) {\n    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];\n    function __() { this.constructor = d; }\n    __.prototype = b.prototype;\n    d.prototype = new __();\n};";
+        var decorateHelper = "\nvar __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {\n    if (typeof Reflect === \"object\" && typeof Reflect.decorate === \"function\") return Reflect.decorate(decorators, target, key, desc);\n    switch (arguments.length) {\n        case 2: return decorators.reduceRight(function(o, d) { return (d && d(o)) || o; }, target);\n        case 3: return decorators.reduceRight(function(o, d) { return (d && d(target, key)), void 0; }, void 0);\n        case 4: return decorators.reduceRight(function(o, d) { return (d && d(target, key, o)) || o; }, desc);\n    }\n};";
+        var metadataHelper = "\nvar __metadata = (this && this.__metadata) || function (k, v) {\n    if (typeof Reflect === \"object\" && typeof Reflect.metadata === \"function\") return Reflect.metadata(k, v);\n};";
+        var paramHelper = "\nvar __param = (this && this.__param) || function (paramIndex, decorator) {\n    return function (target, key) { decorator(target, key, paramIndex); }\n};";
         var compilerOptions = host.getCompilerOptions();
         var languageVersion = compilerOptions.target || 0;
         var sourceMapDataList = compilerOptions.sourceMap || compilerOptions.inlineSourceMap ? [] : undefined;
@@ -20816,7 +20833,7 @@ var ts;
                 var sourceMapNameIndexMap = {};
                 var sourceMapNameIndices = [];
                 function getSourceMapNameIndex() {
-                    return sourceMapNameIndices.length ? sourceMapNameIndices[sourceMapNameIndices.length - 1] : -1;
+                    return sourceMapNameIndices.length ? ts.lastOrUndefined(sourceMapNameIndices) : -1;
                 }
                 var lastRecordedSourceMapSpan;
                 var lastEncodedSourceMapSpan = {
@@ -23292,11 +23309,11 @@ var ts;
                     emitNodeWithoutSourceMap(memberName);
                 }
             }
-            function getInitializedProperties(node, static) {
+            function getInitializedProperties(node, isStatic) {
                 var properties = [];
                 for (var _a = 0, _b = node.members; _a < _b.length; _a++) {
                     var member = _b[_a];
-                    if (member.kind === 133 && static === ((member.flags & 128) !== 0) && member.initializer) {
+                    if (member.kind === 133 && isStatic === ((member.flags & 128) !== 0) && member.initializer) {
                         properties.push(member);
                     }
                 }
@@ -24960,20 +24977,22 @@ var ts;
                 writeLine();
                 emitDetachedComments(node);
                 var startIndex = emitDirectivePrologues(node.statements, false);
-                if ((languageVersion < 2) && (!extendsEmitted && resolver.getNodeCheckFlags(node) & 8)) {
-                    writeLines(extendsHelper);
-                    extendsEmitted = true;
-                }
-                if (!decorateEmitted && resolver.getNodeCheckFlags(node) & 512) {
-                    writeLines(decorateHelper);
-                    if (compilerOptions.emitDecoratorMetadata) {
-                        writeLines(metadataHelper);
+                if (!compilerOptions.noEmitHelpers) {
+                    if ((languageVersion < 2) && (!extendsEmitted && resolver.getNodeCheckFlags(node) & 8)) {
+                        writeLines(extendsHelper);
+                        extendsEmitted = true;
                     }
-                    decorateEmitted = true;
-                }
-                if (!paramEmitted && resolver.getNodeCheckFlags(node) & 1024) {
-                    writeLines(paramHelper);
-                    paramEmitted = true;
+                    if (!decorateEmitted && resolver.getNodeCheckFlags(node) & 512) {
+                        writeLines(decorateHelper);
+                        if (compilerOptions.emitDecoratorMetadata) {
+                            writeLines(metadataHelper);
+                        }
+                        decorateEmitted = true;
+                    }
+                    if (!paramEmitted && resolver.getNodeCheckFlags(node) & 1024) {
+                        writeLines(paramHelper);
+                        paramEmitted = true;
+                    }
                 }
                 if (ts.isExternalModule(node) || compilerOptions.separateCompilation) {
                     if (languageVersion >= 2) {
@@ -25202,10 +25221,10 @@ var ts;
                 }
             }
             function hasDetachedComments(pos) {
-                return detachedCommentsInfo !== undefined && detachedCommentsInfo[detachedCommentsInfo.length - 1].nodePos === pos;
+                return detachedCommentsInfo !== undefined && ts.lastOrUndefined(detachedCommentsInfo).nodePos === pos;
             }
             function getLeadingCommentsWithoutDetachedComments() {
-                var leadingComments = ts.getLeadingCommentRanges(currentSourceFile.text, detachedCommentsInfo[detachedCommentsInfo.length - 1].detachedCommentEndPos);
+                var leadingComments = ts.getLeadingCommentRanges(currentSourceFile.text, ts.lastOrUndefined(detachedCommentsInfo).detachedCommentEndPos);
                 if (detachedCommentsInfo.length - 1) {
                     detachedCommentsInfo.pop();
                 }
@@ -25286,12 +25305,12 @@ var ts;
                         lastComment = comment;
                     });
                     if (detachedComments.length) {
-                        var lastCommentLine = ts.getLineOfLocalPosition(currentSourceFile, detachedComments[detachedComments.length - 1].end);
+                        var lastCommentLine = ts.getLineOfLocalPosition(currentSourceFile, ts.lastOrUndefined(detachedComments).end);
                         var nodeLine = ts.getLineOfLocalPosition(currentSourceFile, ts.skipTrivia(currentSourceFile.text, node.pos));
                         if (nodeLine >= lastCommentLine + 2) {
                             ts.emitNewLineBeforeLeadingComments(currentSourceFile, writer, node, leadingComments);
                             ts.emitComments(currentSourceFile, writer, detachedComments, true, newLine, writeComment);
-                            var currentDetachedCommentInfo = { nodePos: node.pos, detachedCommentEndPos: detachedComments[detachedComments.length - 1].end };
+                            var currentDetachedCommentInfo = { nodePos: node.pos, detachedCommentEndPos: ts.lastOrUndefined(detachedComments).end };
                             if (detachedCommentsInfo) {
                                 detachedCommentsInfo.push(currentDetachedCommentInfo);
                             }
@@ -25332,6 +25351,8 @@ var ts;
     ts.ioReadTime = 0;
     ts.ioWriteTime = 0;
     ts.version = "1.5.0";
+    var carriageReturnLineFeed = "\r\n";
+    var lineFeed = "\n";
     function findConfigFile(searchPath) {
         var fileName = "tsconfig.json";
         while (true) {
@@ -25402,6 +25423,9 @@ var ts;
                 }
             }
         }
+        var newLine = options.newLine === 0 ? carriageReturnLineFeed :
+            options.newLine === 1 ? lineFeed :
+                ts.sys.newLine;
         return {
             getSourceFile: getSourceFile,
             getDefaultLibFileName: function (options) { return ts.combinePaths(ts.getDirectoryPath(ts.normalizePath(ts.sys.getExecutingFilePath())), ts.getDefaultLibFileName(options)); },
@@ -25409,7 +25433,7 @@ var ts;
             getCurrentDirectory: function () { return currentDirectory || (currentDirectory = ts.sys.getCurrentDirectory()); },
             useCaseSensitiveFileNames: function () { return ts.sys.useCaseSensitiveFileNames; },
             getCanonicalFileName: getCanonicalFileName,
-            getNewLine: function () { return ts.sys.newLine; }
+            getNewLine: function () { return newLine; }
         };
     }
     ts.createCompilerHost = createCompilerHost;
@@ -26130,13 +26154,13 @@ var ts;
                                 return textSpan(node);
                             }
                         case 224:
-                            return spanInNode(node.parent.statements[node.parent.statements.length - 1]);
+                            return spanInNode(ts.lastOrUndefined(node.parent.statements));
                             ;
                         case 208:
                             var caseBlock = node.parent;
-                            var lastClause = caseBlock.clauses[caseBlock.clauses.length - 1];
+                            var lastClause = ts.lastOrUndefined(caseBlock.clauses);
                             if (lastClause) {
-                                return spanInNode(lastClause.statements[lastClause.statements.length - 1]);
+                                return spanInNode(ts.lastOrUndefined(lastClause.statements));
                             }
                             return undefined;
                         default:
@@ -27780,7 +27804,7 @@ var ts;
     function nodeEndsWith(n, expectedLastToken, sourceFile) {
         var children = n.getChildren(sourceFile);
         if (children.length) {
-            var last = children[children.length - 1];
+            var last = ts.lastOrUndefined(children);
             if (last.kind === expectedLastToken) {
                 return true;
             }
@@ -28220,7 +28244,7 @@ var ts;
                 if (isStarted) {
                     if (trailingTrivia) {
                         ts.Debug.assert(trailingTrivia.length !== 0);
-                        wasNewLine = trailingTrivia[trailingTrivia.length - 1].kind === 4;
+                        wasNewLine = ts.lastOrUndefined(trailingTrivia).kind === 4;
                     }
                     else {
                         wasNewLine = false;
@@ -29462,6 +29486,8 @@ var ts;
             var previousRange;
             var previousParent;
             var previousRangeStartLine;
+            var lastIndentedLine;
+            var indentationOnLastIndentedLine;
             var edits = [];
             formattingScanner.advance();
             if (formattingScanner.isOnToken()) {
@@ -29516,7 +29542,9 @@ var ts;
                 }
                 var delta = formatting.SmartIndenter.shouldIndentChildNode(node.kind, 0) ? options.IndentSize : 0;
                 if (effectiveParentStartLine === startLine) {
-                    indentation = parentDynamicIndentation.getIndentation();
+                    indentation = startLine === lastIndentedLine
+                        ? indentationOnLastIndentedLine
+                        : parentDynamicIndentation.getIndentation();
                     delta = Math.min(options.IndentSize, parentDynamicIndentation.getDelta() + delta);
                 }
                 return {
@@ -29726,7 +29754,6 @@ var ts;
                                 if (!ts.rangeContainsRange(originalRange, triviaItem)) {
                                     continue;
                                 }
-                                var triviaStartLine = sourceFile.getLineAndCharacterOfPosition(triviaItem.pos).line;
                                 switch (triviaItem.kind) {
                                     case 3:
                                         var commentIndentation = dynamicIndentation.getIndentationForComment(currentTokenInfo.token.kind);
@@ -29749,6 +29776,8 @@ var ts;
                         if (isTokenInRange && !rangeContainsError(currentTokenInfo.token)) {
                             var tokenIndentation = dynamicIndentation.getIndentationForToken(tokenStart.line, currentTokenInfo.token.kind);
                             insertIndentation(currentTokenInfo.token.pos, tokenIndentation, lineAdded);
+                            lastIndentedLine = tokenStart.line;
+                            indentationOnLastIndentedLine = tokenIndentation;
                         }
                     }
                     formattingScanner.advance();
@@ -30337,7 +30366,7 @@ var ts;
     })(formatting = ts.formatting || (ts.formatting = {}));
 })(ts || (ts = {}));
 /// <reference path="..\compiler\program.ts"/>
-var __extends = this.__extends || function (d, b) {
+var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
@@ -31086,7 +31115,8 @@ var ts;
         ClassificationTypeNames.interfaceName = "interface name";
         ClassificationTypeNames.moduleName = "module name";
         ClassificationTypeNames.typeParameterName = "type parameter name";
-        ClassificationTypeNames.typeAlias = "type alias name";
+        ClassificationTypeNames.typeAliasName = "type alias name";
+        ClassificationTypeNames.parameterName = "parameter name";
         return ClassificationTypeNames;
     })();
     ts.ClassificationTypeNames = ClassificationTypeNames;
@@ -32547,22 +32577,6 @@ var ts;
             }
             return ScriptElementKind.unknown;
         }
-        function getTypeKind(type) {
-            var flags = type.getFlags();
-            if (flags & 128)
-                return ScriptElementKind.enumElement;
-            if (flags & 1024)
-                return ScriptElementKind.classElement;
-            if (flags & 2048)
-                return ScriptElementKind.interfaceElement;
-            if (flags & 512)
-                return ScriptElementKind.typeParameterElement;
-            if (flags & 1048703)
-                return ScriptElementKind.primitiveType;
-            if (flags & 256)
-                return ScriptElementKind.primitiveType;
-            return ScriptElementKind.unknown;
-        }
         function getSymbolModifiers(symbol) {
             return symbol && symbol.declarations && symbol.declarations.length > 0
                 ? ts.getNodeModifiers(symbol.declarations[0])
@@ -32926,6 +32940,59 @@ var ts;
                 containerName: containerName
             };
         }
+        function getDefinitionFromSymbol(symbol, node) {
+            var typeChecker = program.getTypeChecker();
+            var result = [];
+            var declarations = symbol.getDeclarations();
+            var symbolName = typeChecker.symbolToString(symbol);
+            var symbolKind = getSymbolKind(symbol, node);
+            var containerSymbol = symbol.parent;
+            var containerName = containerSymbol ? typeChecker.symbolToString(containerSymbol, node) : "";
+            if (!tryAddConstructSignature(symbol, node, symbolKind, symbolName, containerName, result) &&
+                !tryAddCallSignature(symbol, node, symbolKind, symbolName, containerName, result)) {
+                ts.forEach(declarations, function (declaration) {
+                    result.push(createDefinitionInfo(declaration, symbolKind, symbolName, containerName));
+                });
+            }
+            return result;
+            function tryAddConstructSignature(symbol, location, symbolKind, symbolName, containerName, result) {
+                if (isNewExpressionTarget(location) || location.kind === 114) {
+                    if (symbol.flags & 32) {
+                        var classDeclaration = symbol.getDeclarations()[0];
+                        ts.Debug.assert(classDeclaration && classDeclaration.kind === 202);
+                        return tryAddSignature(classDeclaration.members, true, symbolKind, symbolName, containerName, result);
+                    }
+                }
+                return false;
+            }
+            function tryAddCallSignature(symbol, location, symbolKind, symbolName, containerName, result) {
+                if (isCallExpressionTarget(location) || isNewExpressionTarget(location) || isNameOfFunctionDeclaration(location)) {
+                    return tryAddSignature(symbol.declarations, false, symbolKind, symbolName, containerName, result);
+                }
+                return false;
+            }
+            function tryAddSignature(signatureDeclarations, selectConstructors, symbolKind, symbolName, containerName, result) {
+                var declarations = [];
+                var definition;
+                ts.forEach(signatureDeclarations, function (d) {
+                    if ((selectConstructors && d.kind === 136) ||
+                        (!selectConstructors && (d.kind === 201 || d.kind === 135 || d.kind === 134))) {
+                        declarations.push(d);
+                        if (d.body)
+                            definition = d;
+                    }
+                });
+                if (definition) {
+                    result.push(createDefinitionInfo(definition, symbolKind, symbolName, containerName));
+                    return true;
+                }
+                else if (declarations.length) {
+                    result.push(createDefinitionInfo(ts.lastOrUndefined(declarations), symbolKind, symbolName, containerName));
+                    return true;
+                }
+                return false;
+            }
+        }
         function getDefinitionAtPosition(fileName, position) {
             synchronizeHostData();
             var sourceFile = getValidSourceFile(fileName);
@@ -32975,56 +33042,37 @@ var ts;
                 var shorthandContainerName = typeChecker.symbolToString(symbol.parent, node);
                 return ts.map(shorthandDeclarations, function (declaration) { return createDefinitionInfo(declaration, shorthandSymbolKind, shorthandSymbolName, shorthandContainerName); });
             }
-            var result = [];
-            var declarations = symbol.getDeclarations();
-            var symbolName = typeChecker.symbolToString(symbol);
-            var symbolKind = getSymbolKind(symbol, node);
-            var containerSymbol = symbol.parent;
-            var containerName = containerSymbol ? typeChecker.symbolToString(containerSymbol, node) : "";
-            if (!tryAddConstructSignature(symbol, node, symbolKind, symbolName, containerName, result) &&
-                !tryAddCallSignature(symbol, node, symbolKind, symbolName, containerName, result)) {
-                ts.forEach(declarations, function (declaration) {
-                    result.push(createDefinitionInfo(declaration, symbolKind, symbolName, containerName));
-                });
+            return getDefinitionFromSymbol(symbol, node);
+        }
+        function getTypeDefinitionAtPosition(fileName, position) {
+            synchronizeHostData();
+            var sourceFile = getValidSourceFile(fileName);
+            var node = ts.getTouchingPropertyName(sourceFile, position);
+            if (!node) {
+                return undefined;
             }
-            return result;
-            function tryAddConstructSignature(symbol, location, symbolKind, symbolName, containerName, result) {
-                if (isNewExpressionTarget(location) || location.kind === 114) {
-                    if (symbol.flags & 32) {
-                        var classDeclaration = symbol.getDeclarations()[0];
-                        ts.Debug.assert(classDeclaration && classDeclaration.kind === 202);
-                        return tryAddSignature(classDeclaration.members, true, symbolKind, symbolName, containerName, result);
-                    }
-                }
-                return false;
+            var typeChecker = program.getTypeChecker();
+            var symbol = typeChecker.getSymbolAtLocation(node);
+            if (!symbol) {
+                return undefined;
             }
-            function tryAddCallSignature(symbol, location, symbolKind, symbolName, containerName, result) {
-                if (isCallExpressionTarget(location) || isNewExpressionTarget(location) || isNameOfFunctionDeclaration(location)) {
-                    return tryAddSignature(symbol.declarations, false, symbolKind, symbolName, containerName, result);
-                }
-                return false;
+            var type = typeChecker.getTypeOfSymbolAtLocation(symbol, node);
+            if (!type) {
+                return undefined;
             }
-            function tryAddSignature(signatureDeclarations, selectConstructors, symbolKind, symbolName, containerName, result) {
-                var declarations = [];
-                var definition;
-                ts.forEach(signatureDeclarations, function (d) {
-                    if ((selectConstructors && d.kind === 136) ||
-                        (!selectConstructors && (d.kind === 201 || d.kind === 135 || d.kind === 134))) {
-                        declarations.push(d);
-                        if (d.body)
-                            definition = d;
+            if (type.flags & 16384) {
+                var result = [];
+                ts.forEach(type.types, function (t) {
+                    if (t.symbol) {
+                        result.push.apply(result, getDefinitionFromSymbol(t.symbol, node));
                     }
                 });
-                if (definition) {
-                    result.push(createDefinitionInfo(definition, symbolKind, symbolName, containerName));
-                    return true;
-                }
-                else if (declarations.length) {
-                    result.push(createDefinitionInfo(declarations[declarations.length - 1], symbolKind, symbolName, containerName));
-                    return true;
-                }
-                return false;
+                return result;
             }
+            if (!type.symbol) {
+                return undefined;
+            }
+            return getDefinitionFromSymbol(type.symbol, node);
         }
         function getOccurrencesAtPosition(fileName, position) {
             var results = getOccurrencesAtPositionCore(fileName, position);
@@ -34330,35 +34378,43 @@ var ts;
             return ts.NavigationBar.getNavigationBarItems(sourceFile);
         }
         function getSemanticClassifications(fileName, span) {
+            return convertClassifications(getEncodedSemanticClassifications(fileName, span));
+        }
+        function getEncodedSemanticClassifications(fileName, span) {
             synchronizeHostData();
             var sourceFile = getValidSourceFile(fileName);
             var typeChecker = program.getTypeChecker();
             var result = [];
             processNode(sourceFile);
-            return result;
+            return { spans: result, endOfLineState: 0 };
+            function pushClassification(start, length, type) {
+                result.push(start);
+                result.push(length);
+                result.push(type);
+            }
             function classifySymbol(symbol, meaningAtPosition) {
                 var flags = symbol.getFlags();
                 if (flags & 32) {
-                    return ClassificationTypeNames.className;
+                    return 11;
                 }
                 else if (flags & 384) {
-                    return ClassificationTypeNames.enumName;
+                    return 12;
                 }
                 else if (flags & 524288) {
-                    return ClassificationTypeNames.typeAlias;
+                    return 16;
                 }
                 else if (meaningAtPosition & 2) {
                     if (flags & 64) {
-                        return ClassificationTypeNames.interfaceName;
+                        return 13;
                     }
                     else if (flags & 262144) {
-                        return ClassificationTypeNames.typeParameterName;
+                        return 15;
                     }
                 }
                 else if (flags & 1536) {
                     if (meaningAtPosition & 4 ||
                         (meaningAtPosition & 1 && hasValueSideModule(symbol))) {
-                        return ClassificationTypeNames.moduleName;
+                        return 14;
                     }
                 }
                 return undefined;
@@ -34375,10 +34431,7 @@ var ts;
                         if (symbol) {
                             var type = classifySymbol(symbol, getMeaningFromLocation(node));
                             if (type) {
-                                result.push({
-                                    textSpan: ts.createTextSpan(node.getStart(), node.getWidth()),
-                                    classificationType: type
-                                });
+                                pushClassification(node.getStart(), node.getWidth(), type);
                             }
                         }
                     }
@@ -34386,13 +34439,53 @@ var ts;
                 }
             }
         }
+        function getClassificationTypeName(type) {
+            switch (type) {
+                case 1: return ClassificationTypeNames.comment;
+                case 2: return ClassificationTypeNames.identifier;
+                case 3: return ClassificationTypeNames.keyword;
+                case 4: return ClassificationTypeNames.numericLiteral;
+                case 5: return ClassificationTypeNames.operator;
+                case 6: return ClassificationTypeNames.stringLiteral;
+                case 8: return ClassificationTypeNames.whiteSpace;
+                case 9: return ClassificationTypeNames.text;
+                case 10: return ClassificationTypeNames.punctuation;
+                case 11: return ClassificationTypeNames.className;
+                case 12: return ClassificationTypeNames.enumName;
+                case 13: return ClassificationTypeNames.interfaceName;
+                case 14: return ClassificationTypeNames.moduleName;
+                case 15: return ClassificationTypeNames.typeParameterName;
+                case 16: return ClassificationTypeNames.typeAliasName;
+                case 17: return ClassificationTypeNames.parameterName;
+            }
+        }
+        function convertClassifications(classifications) {
+            ts.Debug.assert(classifications.spans.length % 3 === 0);
+            var dense = classifications.spans;
+            var result = [];
+            for (var i = 0, n = dense.length; i < n; i += 3) {
+                result.push({
+                    textSpan: ts.createTextSpan(dense[i], dense[i + 1]),
+                    classificationType: getClassificationTypeName(dense[i + 2])
+                });
+            }
+            return result;
+        }
         function getSyntacticClassifications(fileName, span) {
+            return convertClassifications(getEncodedSyntacticClassifications(fileName, span));
+        }
+        function getEncodedSyntacticClassifications(fileName, span) {
             var sourceFile = syntaxTreeCache.getCurrentSourceFile(fileName);
             var triviaScanner = ts.createScanner(2, false, sourceFile.text);
             var mergeConflictScanner = ts.createScanner(2, false, sourceFile.text);
             var result = [];
             processElement(sourceFile);
-            return result;
+            return { spans: result, endOfLineState: 0 };
+            function pushClassification(start, length, type) {
+                result.push(start);
+                result.push(length);
+                result.push(type);
+            }
             function classifyLeadingTrivia(token) {
                 var tokenStart = ts.skipTrivia(sourceFile.text, token.pos, false);
                 if (tokenStart === token.pos) {
@@ -34409,20 +34502,14 @@ var ts;
                             return;
                         }
                         if (ts.isComment(kind)) {
-                            result.push({
-                                textSpan: ts.createTextSpan(start, width),
-                                classificationType: ClassificationTypeNames.comment
-                            });
+                            pushClassification(start, width, 1);
                             continue;
                         }
                         if (kind === 6) {
                             var text = sourceFile.text;
                             var ch = text.charCodeAt(start);
                             if (ch === 60 || ch === 62) {
-                                result.push({
-                                    textSpan: ts.createTextSpan(start, width),
-                                    classificationType: ClassificationTypeNames.comment
-                                });
+                                pushClassification(start, width, 1);
                                 continue;
                             }
                             ts.Debug.assert(ch === 61);
@@ -34437,10 +34524,7 @@ var ts;
                         break;
                     }
                 }
-                result.push({
-                    textSpan: ts.createTextSpanFromBounds(start, i),
-                    classificationType: ClassificationTypeNames.comment
-                });
+                pushClassification(start, i - start, 1);
                 mergeConflictScanner.setTextPos(i);
                 while (mergeConflictScanner.getTextPos() < end) {
                     classifyDisabledCodeToken();
@@ -34452,10 +34536,7 @@ var ts;
                 var end = mergeConflictScanner.getTextPos();
                 var type = classifyTokenType(tokenKind);
                 if (type) {
-                    result.push({
-                        textSpan: ts.createTextSpanFromBounds(start, end),
-                        classificationType: type
-                    });
+                    pushClassification(start, end - start, type);
                 }
             }
             function classifyToken(token) {
@@ -34463,20 +34544,17 @@ var ts;
                 if (token.getWidth() > 0) {
                     var type = classifyTokenType(token.kind, token);
                     if (type) {
-                        result.push({
-                            textSpan: ts.createTextSpan(token.getStart(), token.getWidth()),
-                            classificationType: type
-                        });
+                        pushClassification(token.getStart(), token.getWidth(), type);
                     }
                 }
             }
             function classifyTokenType(tokenKind, token) {
                 if (ts.isKeyword(tokenKind)) {
-                    return ClassificationTypeNames.keyword;
+                    return 3;
                 }
                 if (tokenKind === 24 || tokenKind === 25) {
                     if (token && ts.getTypeArgumentOrTypeParameterList(token.parent)) {
-                        return ClassificationTypeNames.punctuation;
+                        return 10;
                     }
                 }
                 if (ts.isPunctuation(tokenKind)) {
@@ -34485,61 +34563,66 @@ var ts;
                             if (token.parent.kind === 199 ||
                                 token.parent.kind === 133 ||
                                 token.parent.kind === 130) {
-                                return ClassificationTypeNames.operator;
+                                return 5;
                             }
                         }
                         if (token.parent.kind === 170 ||
                             token.parent.kind === 168 ||
                             token.parent.kind === 169 ||
                             token.parent.kind === 171) {
-                            return ClassificationTypeNames.operator;
+                            return 5;
                         }
                     }
-                    return ClassificationTypeNames.punctuation;
+                    return 10;
                 }
                 else if (tokenKind === 7) {
-                    return ClassificationTypeNames.numericLiteral;
+                    return 4;
                 }
                 else if (tokenKind === 8) {
-                    return ClassificationTypeNames.stringLiteral;
+                    return 6;
                 }
                 else if (tokenKind === 9) {
-                    return ClassificationTypeNames.stringLiteral;
+                    return 6;
                 }
                 else if (ts.isTemplateLiteralKind(tokenKind)) {
-                    return ClassificationTypeNames.stringLiteral;
+                    return 6;
                 }
                 else if (tokenKind === 65) {
                     if (token) {
                         switch (token.parent.kind) {
                             case 202:
                                 if (token.parent.name === token) {
-                                    return ClassificationTypeNames.className;
+                                    return 11;
                                 }
                                 return;
                             case 129:
                                 if (token.parent.name === token) {
-                                    return ClassificationTypeNames.typeParameterName;
+                                    return 15;
                                 }
                                 return;
                             case 203:
                                 if (token.parent.name === token) {
-                                    return ClassificationTypeNames.interfaceName;
+                                    return 13;
                                 }
                                 return;
                             case 205:
                                 if (token.parent.name === token) {
-                                    return ClassificationTypeNames.enumName;
+                                    return 12;
                                 }
                                 return;
                             case 206:
                                 if (token.parent.name === token) {
-                                    return ClassificationTypeNames.moduleName;
+                                    return 14;
+                                }
+                                return;
+                            case 130:
+                                if (token.parent.name === token) {
+                                    return 17;
                                 }
                                 return;
                         }
                     }
-                    return ClassificationTypeNames.text;
+                    return 9;
                 }
             }
             function processElement(element) {
@@ -34748,11 +34831,14 @@ var ts;
             getCompilerOptionsDiagnostics: getCompilerOptionsDiagnostics,
             getSyntacticClassifications: getSyntacticClassifications,
             getSemanticClassifications: getSemanticClassifications,
+            getEncodedSyntacticClassifications: getEncodedSyntacticClassifications,
+            getEncodedSemanticClassifications: getEncodedSemanticClassifications,
             getCompletionsAtPosition: getCompletionsAtPosition,
             getCompletionEntryDetails: getCompletionEntryDetails,
             getSignatureHelpItems: getSignatureHelpItems,
             getQuickInfoAtPosition: getQuickInfoAtPosition,
             getDefinitionAtPosition: getDefinitionAtPosition,
+            getTypeDefinitionAtPosition: getTypeDefinitionAtPosition,
             getReferencesAtPosition: getReferencesAtPosition,
             findReferences: findReferences,
             getOccurrencesAtPosition: getOccurrencesAtPosition,
@@ -34839,7 +34925,55 @@ var ts;
             }
             return true;
         }
+        function convertClassifications(classifications, text) {
+            var entries = [];
+            var dense = classifications.spans;
+            var lastEnd = 0;
+            for (var i = 0, n = dense.length; i < n; i += 3) {
+                var start = dense[i];
+                var length_1 = dense[i + 1];
+                var type = dense[i + 2];
+                if (lastEnd >= 0) {
+                    var whitespaceLength_1 = start - lastEnd;
+                    if (whitespaceLength_1 > 0) {
+                        entries.push({ length: whitespaceLength_1, classification: TokenClass.Whitespace });
+                    }
+                }
+                entries.push({ length: length_1, classification: convertClassification(type) });
+                lastEnd = start + length_1;
+            }
+            var whitespaceLength = text.length - lastEnd;
+            if (whitespaceLength > 0) {
+                entries.push({ length: whitespaceLength, classification: TokenClass.Whitespace });
+            }
+            return { entries: entries, finalLexState: classifications.endOfLineState };
+        }
+        function convertClassification(type) {
+            switch (type) {
+                case 1: return TokenClass.Comment;
+                case 3: return TokenClass.Keyword;
+                case 4: return TokenClass.NumberLiteral;
+                case 5: return TokenClass.Operator;
+                case 6: return TokenClass.StringLiteral;
+                case 8: return TokenClass.Whitespace;
+                case 10: return TokenClass.Punctuation;
+                case 2:
+                case 11:
+                case 12:
+                case 13:
+                case 14:
+                case 15:
+                case 16:
+                case 9:
+                case 17:
+                default:
+                    return TokenClass.Identifier;
+            }
+        }
         function getClassificationsForLine(text, lexState, syntacticClassifierAbsent) {
+            return convertClassifications(getEncodedLexicalClassifications(text, lexState, syntacticClassifierAbsent), text);
+        }
+        function getEncodedLexicalClassifications(text, lexState, syntacticClassifierAbsent) {
             var offset = 0;
             var token = 0;
             var lastNonTriviaToken = 0;
@@ -34872,8 +35006,8 @@ var ts;
             }
             scanner.setText(text);
             var result = {
-                finalLexState: 0,
-                entries: []
+                endOfLineState: 0,
+                spans: []
             };
             var angleBracketStack = 0;
             do {
@@ -34940,7 +35074,7 @@ var ts;
             function processToken() {
                 var start = scanner.getTokenPos();
                 var end = scanner.getTextPos();
-                addResult(end - start, classFromKind(token));
+                addResult(start, end, classFromKind(token));
                 if (end >= text.length) {
                     if (token === 8) {
                         var tokenText = scanner.getTokenText();
@@ -34952,7 +35086,7 @@ var ts;
                             }
                             if (numBackslashes & 1) {
                                 var quoteChar = tokenText.charCodeAt(0);
-                                result.finalLexState = quoteChar === 34
+                                result.endOfLineState = quoteChar === 34
                                     ? 3
                                     : 2;
                             }
@@ -34960,16 +35094,16 @@ var ts;
                     }
                     else if (token === 3) {
                         if (scanner.isUnterminated()) {
-                            result.finalLexState = 1;
+                            result.endOfLineState = 1;
                         }
                     }
                     else if (ts.isTemplateLiteralKind(token)) {
                         if (scanner.isUnterminated()) {
                             if (token === 13) {
-                                result.finalLexState = 5;
+                                result.endOfLineState = 5;
                             }
                             else if (token === 10) {
-                                result.finalLexState = 4;
+                                result.endOfLineState = 4;
                             }
                             else {
                                 ts.Debug.fail("Only 'NoSubstitutionTemplateLiteral's and 'TemplateTail's can be unterminated; got SyntaxKind #" + token);
@@ -34977,16 +35111,24 @@ var ts;
                         }
                     }
                     else if (templateStack.length > 0 && ts.lastOrUndefined(templateStack) === 11) {
-                        result.finalLexState = 6;
+                        result.endOfLineState = 6;
                     }
                 }
             }
-            function addResult(length, classification) {
+            function addResult(start, end, classification) {
+                if (classification === 8) {
+                    return;
+                }
+                if (start === 0 && offset > 0) {
+                    start += offset;
+                }
+                start -= offset;
+                end -= offset;
+                var length = end - start;
                 if (length > 0) {
-                    if (result.entries.length === 0) {
-                        length -= offset;
-                    }
-                    result.entries.push({ length: length, classification: classification });
+                    result.spans.push(start);
+                    result.spans.push(length);
+                    result.spans.push(classification);
                 }
             }
         }
@@ -35051,37 +35193,40 @@ var ts;
         }
         function classFromKind(token) {
             if (isKeyword(token)) {
-                return TokenClass.Keyword;
+                return 3;
             }
             else if (isBinaryExpressionOperatorToken(token) || isPrefixUnaryExpressionOperatorToken(token)) {
-                return TokenClass.Operator;
+                return 5;
             }
             else if (token >= 14 && token <= 64) {
-                return TokenClass.Punctuation;
+                return 10;
             }
             switch (token) {
                 case 7:
-                    return TokenClass.NumberLiteral;
+                    return 4;
                 case 8:
-                    return TokenClass.StringLiteral;
+                    return 6;
                 case 9:
-                    return TokenClass.RegExpLiteral;
+                    return 7;
                 case 6:
                 case 3:
                 case 2:
-                    return TokenClass.Comment;
+                    return 1;
                 case 5:
                 case 4:
-                    return TokenClass.Whitespace;
+                    return 8;
                 case 65:
                 default:
                     if (ts.isTemplateLiteralKind(token)) {
-                        return TokenClass.StringLiteral;
+                        return 6;
                     }
-                    return TokenClass.Identifier;
+                    return 2;
             }
         }
-        return { getClassificationsForLine: getClassificationsForLine };
+        return {
+            getClassificationsForLine: getClassificationsForLine,
+            getEncodedLexicalClassifications: getEncodedLexicalClassifications
+        };
     }
     ts.createClassifier = createClassifier;
     function getDefaultLibFilePath(options) {
@@ -35197,6 +35342,7 @@ var ts;
             CommandNames.Rename = "rename";
             CommandNames.Saveto = "saveto";
             CommandNames.SignatureHelp = "signatureHelp";
+            CommandNames.TypeDefinition = "typeDefinition";
             CommandNames.Unknown = "unknown";
         })(CommandNames = server.CommandNames || (server.CommandNames = {}));
         var Errors;
@@ -35359,6 +35505,24 @@ var ts;
                 var compilerService = project.compilerService;
                 var position = compilerService.host.lineOffsetToPosition(file, line, offset);
                 var definitions = compilerService.languageService.getDefinitionAtPosition(file, position);
+                if (!definitions) {
+                    return undefined;
+                }
+                return definitions.map(function (def) { return ({
+                    file: def.fileName,
+                    start: compilerService.host.positionToLineOffset(def.fileName, def.textSpan.start),
+                    end: compilerService.host.positionToLineOffset(def.fileName, ts.textSpanEnd(def.textSpan))
+                }); });
+            };
+            Session.prototype.getTypeDefinition = function (line, offset, fileName) {
+                var file = ts.normalizePath(fileName);
+                var project = this.projectService.getProjectForFile(file);
+                if (!project) {
+                    throw Errors.NoProject;
+                }
+                var compilerService = project.compilerService;
+                var position = compilerService.host.lineOffsetToPosition(file, line, offset);
+                var definitions = compilerService.languageService.getTypeDefinitionAtPosition(file, position);
                 if (!definitions) {
                     return undefined;
                 }
@@ -35562,7 +35726,7 @@ var ts;
                                     IndentSize: formatOptions.IndentSize,
                                     TabSize: formatOptions.TabSize,
                                     NewLineCharacter: "\n",
-                                    ConvertTabsToSpaces: true
+                                    ConvertTabsToSpaces: formatOptions.ConvertTabsToSpaces
                                 };
                                 var indentPosition = compilerService.languageService.getIndentationAtPosition(file, position, editorOptions);
                                 for (var i = 0, len = lineText.length; i < len; i++) {
@@ -35822,6 +35986,11 @@ var ts;
                         case CommandNames.Definition: {
                             var defArgs = request.arguments;
                             response = this.getDefinition(defArgs.line, defArgs.offset, defArgs.file);
+                            break;
+                        }
+                        case CommandNames.TypeDefinition: {
+                            var defArgs = request.arguments;
+                            response = this.getTypeDefinition(defArgs.line, defArgs.offset, defArgs.file);
                             break;
                         }
                         case CommandNames.References: {
@@ -36551,6 +36720,7 @@ var ts;
                     if (content !== undefined) {
                         var indentSize;
                         info = new ScriptInfo(this.host, fileName, content, openedByClient);
+                        info.setFormatOptions(this.getFormatCodeOptions());
                         this.filenameToScriptInfo[fileName] = info;
                         if (!info.isOpen) {
                             info.fileWatcher = this.host.watchFile(fileName, function (_) { _this.watchedFileChanged(fileName); });
@@ -36567,7 +36737,7 @@ var ts;
             ProjectService.prototype.findConfigFile = function (searchPath) {
                 while (true) {
                     var fileName = ts.combinePaths(searchPath, "tsconfig.json");
-                    if (ts.sys.fileExists(fileName)) {
+                    if (this.host.fileExists(fileName)) {
                         return fileName;
                     }
                     var parentPath = ts.getDirectoryPath(searchPath);
@@ -36700,7 +36870,7 @@ var ts;
                         var proj = this.createProject(configFilename, projectOptions);
                         for (var i = 0, len = parsedCommandLine.fileNames.length; i < len; i++) {
                             var rootFilename = parsedCommandLine.fileNames[i];
-                            if (ts.sys.fileExists(rootFilename)) {
+                            if (this.host.fileExists(rootFilename)) {
                                 var info = this.openFile(rootFilename, clientFileName == rootFilename);
                                 proj.addRoot(info);
                             }
