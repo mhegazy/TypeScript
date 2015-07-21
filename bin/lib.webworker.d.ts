@@ -2361,6 +2361,11 @@ declare module Intl {
         currency?: string;
         currencyDisplay?: string;
         useGrouping?: boolean;
+        minimumintegerDigits?: number;
+        minimumFractionDigits?: number;
+        maximumFractionDigits?: number;
+        minimumSignificantDigits?: number;
+        maximumSignificantDigits?: number;
     }
 
     interface ResolvedNumberFormatOptions {
@@ -2382,10 +2387,10 @@ declare module Intl {
         resolvedOptions(): ResolvedNumberFormatOptions;
     }
     var NumberFormat: {
-        new (locales?: string[], options?: NumberFormatOptions): Collator;
-        new (locale?: string, options?: NumberFormatOptions): Collator;
-        (locales?: string[], options?: NumberFormatOptions): Collator;
-        (locale?: string, options?: NumberFormatOptions): Collator;
+        new (locales?: string[], options?: NumberFormatOptions): NumberFormat;
+        new (locale?: string, options?: NumberFormatOptions): NumberFormat;
+        (locales?: string[], options?: NumberFormatOptions): NumberFormat;
+        (locale?: string, options?: NumberFormatOptions): NumberFormat;
         supportedLocalesOf(locales: string[], options?: NumberFormatOptions): string[];
         supportedLocalesOf(locale: string, options?: NumberFormatOptions): string[];
     }
@@ -2423,14 +2428,14 @@ declare module Intl {
     }
 
     interface DateTimeFormat {
-        format(date: number): string;
+        format(date?: Date | number): string;
         resolvedOptions(): ResolvedDateTimeFormatOptions;
     }
     var DateTimeFormat: {
-        new (locales?: string[], options?: DateTimeFormatOptions): Collator;
-        new (locale?: string, options?: DateTimeFormatOptions): Collator;
-        (locales?: string[], options?: DateTimeFormatOptions): Collator;
-        (locale?: string, options?: DateTimeFormatOptions): Collator;
+        new (locales?: string[], options?: DateTimeFormatOptions): DateTimeFormat;
+        new (locale?: string, options?: DateTimeFormatOptions): DateTimeFormat;
+        (locales?: string[], options?: DateTimeFormatOptions): DateTimeFormat;
+        (locale?: string, options?: DateTimeFormatOptions): DateTimeFormat;
         supportedLocalesOf(locales: string[], options?: DateTimeFormatOptions): string[];
         supportedLocalesOf(locale: string, options?: DateTimeFormatOptions): string[];
     }
@@ -3059,8 +3064,7 @@ interface WebSocket extends EventTarget {
 
 declare var WebSocket: {
     prototype: WebSocket;
-    new(url: string, protocols?: string): WebSocket;
-    new(url: string, protocols?: any): WebSocket;
+    new(url: string, protocols?: string | string[]): WebSocket;
     CLOSED: number;
     CLOSING: number;
     CONNECTING: number;
@@ -3295,8 +3299,7 @@ interface EventListenerObject {
 declare type EventListenerOrEventListenerObject = EventListener | EventListenerObject;
 
 interface ErrorEventHandler {
-    (event: Event, source?: string, fileno?: number, columnNumber?: number): void;
-    (event: string, source?: string, fileno?: number, columnNumber?: number): void;
+    (event: Event | string, source?: string, fileno?: number, columnNumber?: number): void;
 }
 interface PositionCallback {
     (position: Position): void;
